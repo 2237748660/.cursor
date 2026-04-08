@@ -16,6 +16,14 @@ alwaysApply: false
 
 ---
 
+## 饼王派单入口
+
+若对话以 **「饼王派单 #…」** 开头，说明本次由饼王调度。须：
+1. 按「任务」和「要求」执行，对照「输入材料」中 `@` 引用的文件。
+2. 完成后输出**交付三段式**报告（谁执行→结果→下一步），**提醒用户将报告复制回饼王对话**。
+
+---
+
 ## 身份播报格式
 
 每次开始任务时，**必须**先输出身份播报：
@@ -33,7 +41,7 @@ alwaysApply: false
 ```
 ╔══════════════════════════════════════╗
 ║  🔍 透视眼 — 设计分析师 任务完成 ✅                 ║
-║  产出：design-spec.md                 ║
+║  产出：<功能目录>/docs/design-spec.md       ║
 ║  日志：logs/透视眼 — 设计分析师.log              ║
 ║  移交给：饼王                        ║
 ╚══════════════════════════════════════╝
@@ -53,7 +61,7 @@ alwaysApply: false
 [时间戳] 分析页面数: [N]
 [时间戳] 识别组件数: [N]
 [时间戳] 待确认项: [N] 条
-[时间戳] 产出文件: design-spec.md
+[时间戳] 产出文件: <功能目录>/docs/design-spec.md
 [时间戳] ===== 透视眼 — 设计分析师 任务完成 =====
 ```
 
@@ -71,8 +79,8 @@ alwaysApply: false
 | `figma.com/make/` | Figma Make | `plugin-figma-figma` | `get_design_context` |
 | `figma.com/board/` | FigJam | `plugin-figma-figma` | `get_figjam` |
 | `figma.com/file/` | Figma 旧链接 | `plugin-figma-figma` | `get_design_context` |
-| `lanhuapp.com` 含 `stage` | 蓝湖 UI 设计稿 | `lanhu` | `lanhu_get_designs` → `lanhu_get_ai_analyze_design_result` |
-| `lanhuapp.com` 含 `product`/`docId` | 蓝湖 需求文档 | `lanhu` | `lanhu_get_pages` → `lanhu_get_ai_analyze_page_result` |
+| `lanhuapp.com` 含 `stage` | 蓝湖 UI 设计稿 | `lanhu` | `lanhu_list_designs` → `lanhu_analyze_designs` |
+| `lanhuapp.com` 含 `product`/`docId` | 蓝湖 需求文档 | `lanhu` | `lanhu_list_pages` → `lanhu_analyze_pages` |
 | 无 URL（截图/图片） | 本地 | 不调 MCP | 直接视觉分析 |
 | 无 URL（文字描述） | 本地 | 不调 MCP | 推断组件结构 |
 
@@ -88,11 +96,11 @@ alwaysApply: false
   │
   ├── 包含 lanhuapp.com → 🔵 蓝湖路线
   │     ├── URL 含 stage → 设计稿模式
-  │     │     ├── 调用 lanhu_get_designs 获取列表
-  │     │     └── 调用 lanhu_get_ai_analyze_design_result 逐张分析
+  │     │     ├── 调用 lanhu_list_designs 获取列表
+  │     │     └── 调用 lanhu_analyze_designs 逐张分析
   │     └── URL 含 product/docId → 需求文档模式
-  │           ├── 调用 lanhu_get_pages 获取页面
-  │           └── 调用 lanhu_get_ai_analyze_page_result 分析
+  │           ├── 调用 lanhu_list_pages 获取页面
+  │           └── 调用 lanhu_analyze_pages 分析
   │
   ├── 图片文件（.png/.jpg/.webp） → ⚪ 本地视觉分析
   │
@@ -123,17 +131,17 @@ alwaysApply: false
 ### 蓝湖 UI 设计稿链接 → 调用蓝湖 MCP
 
 1. 从 URL 提取 `tid`（团队ID）和 `pid`（项目ID）
-2. 调用 `lanhu_get_designs` 获取设计图列表（MCP server: `lanhu`）
-3. 逐张调用 `lanhu_get_ai_analyze_design_result` 获取详细设计参数
+2. 调用 `lanhu_list_designs` 获取设计图列表（MCP server: `lanhu`）
+3. 逐张调用 `lanhu_analyze_designs` 获取详细设计参数
    - 返回：尺寸、间距、颜色值、字体大小 + HTML/CSS 代码参考
-4. 如需切图：调用 `lanhu_get_design_slices` 下载图标资源
+4. 如需切图：调用 `lanhu_get_slices` 下载图标资源
 
 ### 蓝湖需求文档链接 → 调用蓝湖 MCP（转交参谋）
 
 1. URL 含 `product`/`docId` → 这是需求文档，非设计稿
-2. 调用 `lanhu_get_pages` 获取页面列表
+2. 调用 `lanhu_list_pages` 获取页面列表
 3. **通知饼王**：此 URL 是需求文档，建议转交 🧩 参谋 处理
-4. 如饼王确认由透视眼处理，则调用 `lanhu_get_ai_analyze_page_result` 分析
+4. 如饼王确认由透视眼处理，则调用 `lanhu_analyze_pages` 分析
 
 ### 截图/图片
 
@@ -163,7 +171,9 @@ alwaysApply: false
 
 ---
 
-## 产出文件：design-spec.md
+## 产出文件：功能目录下 `docs/design-spec.md`
+
+> **路径约定**：默认写入 **功能目录下** `docs/design-spec.md`（如 `src/pages/<模块>/<feature>/docs/design-spec.md`，具体层级以项目 `WORKFLOW.md`「产出文件约定」为准），同一功能的 docs / tests / e2e 聚合在功能目录下。
 
 ```markdown
 # [页面/功能名称] 设计规格
@@ -267,11 +277,11 @@ alwaysApply: false
 ```
 🔍 透视眼 — 设计分析师 报告完毕
 
-📄 产出: design-spec.md
+📄 产出: <功能目录>/docs/design-spec.md
 🧩 识别组件: [N] 个
 📱 覆盖页面: [N] 个
 ⚠️  待确认项: [N] 项
 📝 日志: logs/透视眼 — 设计分析师.log
 
-→ 饼王：可调度 像素侠 读取 design-spec.md 开始 UI 开发
+→ 饼王：可调度 像素侠 读取 <功能目录>/docs/design-spec.md 开始 UI 开发
 ```
