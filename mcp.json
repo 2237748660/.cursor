@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "lanhu": {
+      "command": "node",
+      "args": [
+        "--env-file=<蓝湖MCP目录>/.env",
+        "<蓝湖MCP目录>/dist/server.js"
+      ],
+      "cwd": "<蓝湖MCP目录>"
+    },
+    "Framelink MCP for Figma": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "figma-developer-mcp",
+        "--figma-api-key=<figma-api-key>",
+        "--stdio"
+      ]
+    }
+  }
+}
